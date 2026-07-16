@@ -36,4 +36,6 @@ safe-kiosk-people-recover = "safe_kiosk_people_agent.entrypoints:main_recover"
 where = ["src"]
 
 [tool.ruff]
+
+[tool.ruff.lint]
 ignore = ["E501", "E701", "E702"]

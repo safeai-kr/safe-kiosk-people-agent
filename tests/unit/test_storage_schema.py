@@ -5,7 +5,7 @@ def test_all_schema_fixtures_are_integrity_checked(tmp_path: Path) -> None:
     for name in ("wifi", "ble", "metrics"):
         db = open_sqlite(tmp_path / f"{name}.sqlite", f"safe_kiosk_people_agent.storage.schema.{name}")
         assert quick_check(db) == "ok"
-        assert db.execute("select count(*) from schema_version").fetchone()[0] == 1
+        assert db.execute("select count(*) from schema_version").fetchone()[0] == 2
         db.close()
 
 def test_metrics_constraints(tmp_path: Path) -> None:

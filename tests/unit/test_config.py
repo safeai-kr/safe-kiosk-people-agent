@@ -1,7 +1,7 @@
 from dataclasses import replace
 from decimal import Decimal
 import pytest
-from conftest import MINIMAL
+from tests.conftest import MINIMAL
 from safe_kiosk_people_agent.config import ConfigError, config_digest, load_config, threshold_digest, validate_config
 
 def test_default_policy_is_six_hours() -> None:

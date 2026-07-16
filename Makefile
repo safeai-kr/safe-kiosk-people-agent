@@ -7,6 +7,12 @@ lock:
 	$(LOCK_VENV)/bin/pip install --disable-pip-version-check pip-tools==$(PIP_TOOLS_VERSION)
 	CUSTOM_COMPILE_COMMAND='make lock' $(LOCK_VENV)/bin/pip-compile --resolver=backtracking --strip-extras --generate-hashes --allow-unsafe --output-file=requirements.lock pyproject.toml
 	CUSTOM_COMPILE_COMMAND='make lock' $(LOCK_VENV)/bin/pip-compile --resolver=backtracking --strip-extras --generate-hashes --allow-unsafe --extra=dev --output-file=requirements-dev.lock pyproject.toml
+
+.PHONY: fault-test soak-72h
+fault-test:
+	.venv/bin/pytest -m pi_fault -v
+soak-72h:
+	tests/soak/run_72h.sh
 LOCK_VENV := /tmp/safe-kiosk-people-agent-lock-venv
 PIP_TOOLS_VERSION := 7.5.2
 

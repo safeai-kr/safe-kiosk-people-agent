@@ -1,0 +1,6 @@
+[Unit]
+Description=Safe Kiosk interface guard
+After=systemd-tmpfiles-setup.service
+[Service]
+Type=oneshot
+ExecStart=/opt/safe-kiosk-people-agent/venv/bin/people-agent check-config --config /etc/safe-kiosk-people-agent/config.toml

@@ -1,0 +1,6 @@
+[Unit]
+Description=Safe Kiosk recovery (%i)
+[Service]
+Type=oneshot
+ExecStart=/opt/safe-kiosk-people-agent/venv/bin/people-agent recover --scope %i
+User=root

@@ -1,0 +1,5 @@
+[Unit]
+Description=Safe Kiosk People Agent resource slice
+[Slice]
+MemoryHigh=1536M
+MemoryMax=2048M

@@ -1,0 +1,19 @@
+[Unit]
+Description=Safe Kiosk Kismet
+After=systemd-tmpfiles-setup.service
+RestartPreventExitStatus=78
+[Service]
+Type=notify
+NotifyAccess=main
+ExecStart=/opt/safe-kiosk-people-agent/venv/bin/people-agent run-kismet --config /etc/safe-kiosk-people-agent/config.toml
+WatchdogSec=60s
+Restart=on-failure
+RestartSec=10s
+KillMode=control-group
+TimeoutStopSec=20s
+SendSIGKILL=yes
+UMask=0027
+MemoryHigh=768M
+MemoryMax=1024M
+Slice=safe-kiosk-people-agent.slice
+User=safe-kiosk-kismet

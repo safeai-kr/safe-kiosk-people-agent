@@ -1,0 +1,5 @@
+[Unit]
+Description=Safe Kiosk trusted clock gate
+[Service]
+Type=oneshot
+ExecStart=/opt/safe-kiosk-people-agent/deploy/wait-time-sync.sh

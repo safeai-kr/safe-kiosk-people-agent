@@ -1,0 +1,18 @@
+[Unit]
+Description=Safe Kiosk Wi-Fi collector
+After=systemd-tmpfiles-setup.service safe-kiosk-people-kismet.service
+OnFailure=safe-kiosk-people-recover@wifi.service
+[Service]
+Type=notify
+NotifyAccess=main
+ExecStart=/opt/safe-kiosk-people-agent/venv/bin/safe-kiosk-people-wifi --config /etc/safe-kiosk-people-agent/config.toml
+WatchdogSec=60s
+Restart=on-failure
+RestartSec=10s
+KillMode=control-group
+TimeoutStopSec=20s
+SendSIGKILL=yes
+MemoryHigh=192M
+MemoryMax=256M
+Slice=safe-kiosk-people-agent.slice
+User=safe-kiosk-people-agent

@@ -1,0 +1,4 @@
+[Unit]
+Description=Safe Kiosk People Agent
+Wants=safe-kiosk-people-kismet.service safe-kiosk-people-wifi.service safe-kiosk-people-ble.service safe-kiosk-people-metrics.service
+After=systemd-tmpfiles-setup.service

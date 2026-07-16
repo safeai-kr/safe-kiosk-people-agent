@@ -1,0 +1,18 @@
+[Unit]
+Description=Safe Kiosk metrics service
+Wants=safe-kiosk-people-wifi.service safe-kiosk-people-ble.service
+After=systemd-tmpfiles-setup.service
+[Service]
+Type=notify
+NotifyAccess=main
+ExecStart=/opt/safe-kiosk-people-agent/venv/bin/safe-kiosk-people-metrics --config /etc/safe-kiosk-people-agent/config.toml
+WatchdogSec=60s
+Restart=on-failure
+RestartSec=10s
+KillMode=control-group
+TimeoutStopSec=20s
+SendSIGKILL=yes
+MemoryHigh=256M
+MemoryMax=384M
+Slice=safe-kiosk-people-agent.slice
+User=safe-kiosk-people-agent

@@ -1,0 +1,14 @@
+source=skwifi0:type=linuxwifi,name=safe-kiosk-people,vif=skwifi0mon,filter_mgmt=true,channel_hop=true,channel_hoprate=5/sec,band24ghz=true,band5ghz=true,band6ghz=false,default_ht20=false,expand_ht20=false,ht_channels=false,vht_channels=false
+httpd_bind_address=127.0.0.1
+httpd_port=2501
+httpd_allow_cors=false
+log_types=kismet
+log_prefix={generation_directory}
+log_template=%p/{generation_filename}
+kis_log_data_packets=false
+kis_log_duplicate_packets=false
+kis_log_packet_filter_default=pass
+kis_log_packet_timeout=86400
+kis_log_device_timeout=86400
+kis_log_channel_history=false
+kis_log_datasources=false

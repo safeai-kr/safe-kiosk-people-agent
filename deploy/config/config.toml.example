@@ -1,0 +1,10 @@
+[agent]
+store_root = "/var/lib/safe-kiosk-people-agent"
+collection_interval_seconds = 300
+
+[wifi]
+capture_interface = "skwifi0"
+monitor_interface = "skwifi0mon"
+
+[bluetooth]
+adapter = "auto"

@@ -18,3 +18,14 @@ class Uploader:
             if self.store.apply_server_result(bucket,row.revision,result['result']):
                 (terminal if result['result']=='rejected' else delivered).append(bucket)
         return UploadRun(tuple(delivered),tuple(terminal),False)
+    async def run(self,stop)->None:
+        import asyncio
+        while not stop.is_set():
+            await self.run_once(datetime.now().astimezone())
+            try: await asyncio.wait_for(stop.wait(),300)
+            except asyncio.TimeoutError: pass
+    async def run_resilient(self,stop)->None:
+        import asyncio
+        while not stop.is_set():
+            try: await self.run(stop)
+            except Exception: await asyncio.sleep(10)

@@ -76,6 +76,8 @@ class IngestResponse: sensor_id:UUID; received_at:datetime; status_result:Litera
 @dataclass(frozen=True)
 class SensorError: component:str; code:str; message:str; occurred_at:datetime
 @dataclass(frozen=True)
+class ComponentStatus: component:str; health:SourceHealth; error:SensorError|None; latched:bool; boot_id:str; sequence:int; observed_at:datetime; observed_boottime_ns:int
+@dataclass(frozen=True)
 class SensorStatus:
     observed_at:datetime; kismet_status:SourceHealth; wifi_status:SourceHealth; ble_status:SourceHealth; metrics_status:SourceHealth; upload_status:SourceHealth; last_wifi_observed_at:datetime|None; last_ble_observed_at:datetime|None; last_bucket_created_at:datetime|None; last_upload_at:datetime|None; recovery_counts:Mapping[str,int]; cpu_percent:Decimal; memory_bytes:int; disk_free_bytes:int; pending_outbox_count:int; last_error:SensorError|None; threshold_version:str; metric_version:str
     def to_wire(self)->Mapping[str,object]: return {'observed_at':self.observed_at.isoformat(),'kismet_status':self.kismet_status.value,'wifi_status':self.wifi_status.value,'ble_status':self.ble_status.value,'metrics_status':self.metrics_status.value,'upload_status':self.upload_status.value,'recovery_counts':dict(self.recovery_counts),'cpu_percent':str(self.cpu_percent),'memory_bytes':self.memory_bytes,'disk_free_bytes':self.disk_free_bytes,'pending_outbox_count':self.pending_outbox_count,'threshold_version':self.threshold_version,'metric_version':self.metric_version}

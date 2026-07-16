@@ -1,0 +1,1 @@
+class KismetSupervisor: pass

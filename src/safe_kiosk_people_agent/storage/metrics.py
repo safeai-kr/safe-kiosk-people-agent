@@ -31,10 +31,17 @@ class MetricsStore:
         result=[]
         with transaction(self.db):
             for row in rows:
-                self.db.execute("insert or ignore into metric_event(source,summary_id,spool_sequence,event_time,payload_json,collector_run_id) values(?,?,?,?,?,?)",(row.source.value,row.summary_id,row.spool_sequence,_iso(row.last_observed_at),json.dumps({'summary_id':row.summary_id}),row.collector_run_id))
+                payload={"summary_id":row.summary_id,"source":row.source.value,"device_token":row.device_token,"window_start":_iso(row.window_start),"window_end":_iso(row.window_end),"first_observed_at":_iso(row.first_observed_at),"last_observed_at":_iso(row.last_observed_at),"sample_count":row.sample_count,"median_rssi_dbm":row.median_rssi_dbm,"max_rssi_dbm":row.max_rssi_dbm,"frequency_mhz":row.frequency_mhz,"tx_power_dbm":row.tx_power_dbm}
+                self.db.execute("insert or ignore into metric_event(source,summary_id,spool_sequence,event_time,payload_json,collector_run_id) values(?,?,?,?,?,?)",(row.source.value,row.summary_id,row.spool_sequence,_iso(row.last_observed_at),json.dumps(payload),row.collector_run_id))
                 result.append(MetricEvent(row.source,row.summary_id,row.spool_sequence,row.last_observed_at,row))
         return tuple(result)
-    def load_staged_events(self,*,limit:int)->tuple[MetricEvent,...]: return ()
+    def load_staged_events(self,*,limit:int)->tuple[MetricEvent,...]:
+        rows=self.db.execute("select * from metric_event where consumed=0 order by source,spool_sequence limit ?",(limit,)).fetchall()
+        result=[]
+        for r in rows:
+            p=json.loads(r['payload_json']); summary=StoredObservationSummary(p['summary_id'],Source(p['source']),r['collector_run_id'],p['device_token'],datetime.fromisoformat(p['window_start']),datetime.fromisoformat(p['window_end']),datetime.fromisoformat(p['first_observed_at']),datetime.fromisoformat(p['last_observed_at']),p['sample_count'],p['median_rssi_dbm'],p['max_rssi_dbm'],p['frequency_mhz'],p['tx_power_dbm'],r['spool_sequence'])
+            result.append(MetricEvent(Source(r['source']),r['summary_id'],r['spool_sequence'],datetime.fromisoformat(r['event_time']),summary))
+        return tuple(result)
     def commit_event(self,event:MetricEvent,source_cursor:SourceCursor|None,reduction:ReductionBatch)->CommitOutcome:
         with transaction(self.db):
             row=self.db.execute("select consumed from metric_event where source=? and summary_id=?",(event.source.value,event.summary_id)).fetchone()

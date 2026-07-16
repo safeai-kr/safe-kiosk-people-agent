@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools==80.9.0", "wheel==0.45.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "safe-kiosk-people-agent"
+version = "0.1.0"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "bleak==3.0.2",
+  "dbus-fast==5.0.22",
+  "httpx==0.28.1",
+  "psutil==7.2.2",
+]
+
+[project.optional-dependencies]
+dev = [
+  "build>=1.2,<2",
+  "mypy==2.2.0",
+  "pip-tools==7.5.2",
+  "pytest==9.1.1",
+  "pytest-asyncio==1.4.0",
+  "ruff==0.15.20",
+  "setuptools==80.9.0",
+  "wheel==0.45.1",
+]
+
+[project.scripts]
+people-agent = "safe_kiosk_people_agent.cli:main"
+safe-kiosk-people-wifi = "safe_kiosk_people_agent.entrypoints:main_wifi"
+safe-kiosk-people-ble = "safe_kiosk_people_agent.entrypoints:main_ble"
+safe-kiosk-people-metrics = "safe_kiosk_people_agent.entrypoints:main_metrics"
+safe-kiosk-people-recover = "safe_kiosk_people_agent.entrypoints:main_recover"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+ignore = ["E501", "E701", "E702"]

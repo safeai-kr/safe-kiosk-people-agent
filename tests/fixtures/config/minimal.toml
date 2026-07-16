@@ -1,0 +1,34 @@
+[identity]
+location_id = "people-plan-location"
+sensor_id = "00000000-0000-4000-8000-000000000001"
+metric_version = "metric-v1"
+site_reference_radius_m = 12.5
+
+[wifi]
+usb_id_path = "platform-xhci-hcd.1-usb-0:1.2:1.0"
+usb_sysfs_path = "/sys/bus/usb/devices/1-1.2"
+permanent_mac = "02:11:22:33:44:55"
+driver = "mt76x2u"
+regulatory_country = "KR"
+uplink_permanent_mac = "d8:3a:dd:11:22:33"
+uplink_connection_uuid = "00000000-0000-4000-8000-000000000101"
+
+[ble]
+adapter = "hci1"
+usb_sysfs_path = "/sys/bus/usb/devices/1-1.3"
+
+[thresholds]
+wifi_inside_rssi_dbm = -55
+wifi_outside_rssi_dbm = -80
+ble_inside_rssi_dbm = -60
+ble_outside_rssi_dbm = -85
+wifi_people_weight = 1.0
+ble_people_weight = 1.0
+threshold_version = "threshold-v1"
+
+[storage]
+
+[upload]
+supabase_url = "https://example.supabase.co"
+
+[runtime]

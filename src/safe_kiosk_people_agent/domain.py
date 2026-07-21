@@ -91,6 +91,18 @@ class ScheduledAction: kind:Literal['event','health','tick']; at:datetime; sourc
 @dataclass(frozen=True)
 class EventPartition: on_time:tuple[MetricEvent,...]; late:tuple[MetricEvent,...]
 @dataclass(frozen=True)
-class ReductionBatch: session_rows:tuple[Mapping[str,object],...]; fixed_device_rows:tuple[Mapping[str,object],...]; health_rows:tuple[Mapping[str,object],...]; bucket_rows:tuple[BucketMetric,...]; snapshot_rows:tuple[Mapping[str,object],...]; outbox_rows:tuple[Mapping[str,object],...]
+class ReductionBatch: session_rows:tuple[Mapping[str,object],...]; fixed_device_rows:tuple[Mapping[str,object],...]; health_rows:tuple[Mapping[str,object],...]; bucket_rows:tuple[BucketMetric,...]; snapshot_rows:tuple[Mapping[str,object],...]; outbox_rows:tuple[Mapping[str,object],...]; source_cursors:tuple[SourceCursor,...]=(); consumed_event_keys:tuple[tuple[Source,str],...]=()
 @dataclass(frozen=True)
-class MetricsRunResult: health_events:tuple[HealthEvent,...]; action_outcomes:tuple[ActionOutcome,...]; replay_outcomes:tuple[ReplayResult,...]; closed_buckets:tuple[BucketMetric,...]; interrupted_session_count:int; status:SensorStatus
+class MetricsRunResult:
+    health_events: tuple[HealthEvent, ...]
+    action_outcomes: tuple[ActionOutcome, ...]
+    replay_outcomes: tuple[ReplayResult, ...]
+    closed_buckets: tuple[BucketMetric, ...]
+    interrupted_session_count: int
+    status: SensorStatus
+    quality_flags: tuple[str, ...] = ()
+
+    def __iter__(self):
+        """Backward-compatible unpacking as ``(buckets, quality_flags)``."""
+        yield self.closed_buckets
+        yield self.quality_flags

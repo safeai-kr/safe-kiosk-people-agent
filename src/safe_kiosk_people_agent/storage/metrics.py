@@ -49,3 +49,24 @@ class MetricsStore:
             self.db.execute("update metric_event set consumed=1 where source=? and summary_id=?",(event.source.value,event.summary_id))
             if source_cursor:self.db.execute("insert into source_cursor(source,collector_run_id,spool_sequence,last_event_time) values(?,?,?,?) on conflict(source) do update set collector_run_id=excluded.collector_run_id,spool_sequence=excluded.spool_sequence,last_event_time=excluded.last_event_time",(source_cursor.source.value,source_cursor.collector_run_id,source_cursor.spool_sequence,_iso(source_cursor.last_event_time) if source_cursor.last_event_time else None))
         return CommitOutcome(True,source_cursor or SourceCursor(event.source,event.summary.collector_run_id,event.spool_sequence,event.event_time),())
+
+    def commit_reduction(self, reduction: ReductionBatch) -> None:
+        """Persist reducer state, buckets, outbox and cursors atomically."""
+        with transaction(self.db):
+            for row in reduction.session_rows:
+                self.db.execute("insert or replace into active_session(source,device_token,payload_json) values(?,?,?)", (row["source"], row["device_token"], json.dumps(row, sort_keys=True, default=str)))
+            for row in reduction.fixed_device_rows:
+                self.db.execute("insert or replace into fixed_device(source,device_token,last_observed_at,fixed_until) values(?,?,?,?)", (row["source"], row["device_token"], row["last_observed_at"], row["fixed_until"]))
+            for row in reduction.health_rows:
+                self.db.execute("insert or replace into source_health(source,health,observed_at) values(?,?,?)", (row["source"], row["health"], row["observed_at"]))
+            for bucket in reduction.bucket_rows:
+                payload = json.dumps(bucket.to_wire(), sort_keys=True)
+                self.db.execute("insert into bucket_metric(bucket_start,bucket_end,payload_json,estimated_people_count,peak_people_count,revision) values(?,?,?,?,?,?) on conflict(bucket_start) do update set bucket_end=excluded.bucket_end,payload_json=excluded.payload_json,estimated_people_count=excluded.estimated_people_count,peak_people_count=excluded.peak_people_count,revision=excluded.revision", (_iso(bucket.bucket_start), _iso(bucket.bucket_end), payload, bucket.estimated_people_count, bucket.peak_people_count, bucket.revision))
+            for row in reduction.snapshot_rows:
+                self.db.execute("insert into state_snapshot(snapshot_at,processed_through,canonical_state_json,config_generation) values(?,?,?,?)", (row["snapshot_at"], row["processed_through"], row["canonical_state_json"], row["config_generation"]))
+            for row in reduction.outbox_rows:
+                self.db.execute("insert or replace into upload_outbox(bucket_start,payload_json,state,revision) values(?,?,?,?)", (row["bucket_start"], row["payload_json"], row.get("state", "pending"), row["revision"]))
+            for cursor in reduction.source_cursors:
+                self.db.execute("insert into source_cursor(source,collector_run_id,spool_sequence,last_event_time) values(?,?,?,?) on conflict(source) do update set collector_run_id=excluded.collector_run_id,spool_sequence=excluded.spool_sequence,last_event_time=excluded.last_event_time", (cursor.source.value, cursor.collector_run_id, cursor.spool_sequence, _iso(cursor.last_event_time) if cursor.last_event_time else None))
+            for source, summary_id in reduction.consumed_event_keys:
+                self.db.execute("update metric_event set consumed=1 where source=? and summary_id=?", (source.value, summary_id))

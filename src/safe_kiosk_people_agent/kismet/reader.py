@@ -5,12 +5,18 @@ from datetime import datetime, timezone
 from ..domain import KismetGeneration, KismetPacket, KismetCursor
 class KismetReader:
     def __init__(self,path:Path): self.db=sqlite3.connect(path)
+    def _use_generation(self, generation: KismetGeneration) -> None:
+        configured = Path(self.db.execute("pragma database_list").fetchone()[2])
+        if configured != generation.path:
+            self.db.close()
+            self.db = sqlite3.connect(generation.path)
     def validate_schema(self,path:Path|None=None)->int:
         name = path or Path(self.db.execute("pragma database_list").fetchone()[2])
         tables={r[0] for r in self.db.execute("select name from sqlite_master where type='table'")}
         if 'packets' not in tables: raise sqlite3.DatabaseError(f"invalid Kismet schema: {name}")
         return 1
     def read_probe_requests(self,generation:KismetGeneration,after:KismetCursor|None=None,limit:int=10000):
+        self._use_generation(generation)
         self.validate_schema()
         rows=self.db.execute("select rowid,ts_sec,ts_usec,sourcemac,signal_dbm,frequency,tags from packets where tags like '%DOT11_PROBE_REQ%' order by ts_sec,ts_usec,rowid limit ?",(limit,)).fetchall(); result=[]
         for row in rows:

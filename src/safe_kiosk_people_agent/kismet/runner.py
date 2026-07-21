@@ -6,7 +6,9 @@ from ..interfaces.discovery import WifiRoleSnapshot
 from ..health.systemd import SystemdNotifier
 from ..health.watchdog import WatchdogLoop  # type: ignore[import-untyped]
 class KismetRunner:
-    def __init__(self,before_spawn:Callable[[],WifiRoleSnapshot],notifier:SystemdNotifier,watchdog:WatchdogLoop,command:Sequence[str]=( 'true',)):
+    def __init__(self,before_spawn:Callable[[],WifiRoleSnapshot],notifier:SystemdNotifier,watchdog:WatchdogLoop,command:Sequence[str]):
+        if not command or not all(str(part).strip() for part in command):
+            raise ValueError("pinned Kismet command is required")
         self.before_spawn=before_spawn; self.notifier=notifier; self.watchdog=watchdog; self.command=tuple(command)
     def run(self,stop:Event)->int:
         try: self.before_spawn()

@@ -2,5 +2,5 @@
 Description=Safe Kiosk recovery (%i)
 [Service]
 Type=oneshot
-ExecStart=/opt/safe-kiosk-people-agent/venv/bin/people-agent recover --scope %i
+ExecStart=/opt/safe-kiosk-people-agent/venv/bin/people-agent recover --config /etc/safe-kiosk-people-agent/config.toml --scope %i
 User=root

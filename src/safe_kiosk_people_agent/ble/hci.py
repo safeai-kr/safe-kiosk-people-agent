@@ -24,9 +24,11 @@ class BleHciController:
         self._command(('sudo','hciconfig',self.adapter,'down'),check=False)
         self._command(('sudo','pkill','-TERM','-f',f'bluetooth.*{self.adapter}'),check=False)
         self._command(('sudo','hciconfig',self.adapter,'reset'),check=False)
-    def prepare(self)->BleHciStatus:
-        self.verify_identity(); self.release_stale_owner()
-        self._command(('sudo','hciconfig',self.adapter,'up'))
-        self._command(('sudo','hciconfig',self.adapter,'piscan'),check=False)
+    def prepare(self, *, mutate: bool = True)->BleHciStatus:
+        self.verify_identity()
+        if mutate:
+            self.release_stale_owner()
+            self._command(('sudo','hciconfig',self.adapter,'up'))
+            self._command(('sudo','hciconfig',self.adapter,'piscan'),check=False)
         info=self._command(('hciconfig',self.adapter),check=False)
         return BleHciStatus(self.adapter,None,'UP RUNNING' in info,'PSCAN' in info or 'ISCAN' in info)

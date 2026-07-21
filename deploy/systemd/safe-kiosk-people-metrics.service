@@ -5,6 +5,7 @@ After=systemd-tmpfiles-setup.service
 [Service]
 Type=notify
 NotifyAccess=main
+RestartPreventExitStatus=78
 ExecStart=/opt/safe-kiosk-people-agent/venv/bin/safe-kiosk-people-metrics --config /etc/safe-kiosk-people-agent/config.toml
 WatchdogSec=60s
 Restart=on-failure

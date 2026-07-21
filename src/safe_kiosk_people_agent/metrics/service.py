@@ -76,6 +76,7 @@ class MetricsService:
             if metric is not None:
                 closed.append(metric)
         replay_outcomes = []
+        replayed_metrics: list[BucketMetric] = []
         if self.store is not None:
             stored = tuple(value for value in values if isinstance(value, StoredObservationSummary))
             events = self.store.stage_source_rows(stored) if stored else ()
@@ -83,13 +84,16 @@ class MetricsService:
             late = tuple(event for event in events if event.event_time < processed)
             if late:
                 snapshot = self.store.load_runtime_state() or StateSnapshot(current, processed, {}, "{}", 1)
-                replay_outcomes.append(self.replay_engine.rebuild(tuple(ScheduledAction("event", event.event_time, event.source, event.spool_sequence, event) for event in late), processed - timedelta(hours=1), current, snapshot, {}))
+                replay_result = self.replay_engine.rebuild(tuple(ScheduledAction("event", event.event_time, event.source, event.spool_sequence, event) for event in late), processed - timedelta(hours=1), current, snapshot, {})
+                replay_outcomes.append(replay_result)
+                replayed_metrics.extend(replay_result.rebuilt_buckets)
             cursors = tuple(SourceCursor(event.source, event.summary.collector_run_id, event.spool_sequence, event.event_time) for event in events)
-            outbox = tuple({"bucket_start": metric.bucket_start.isoformat(), "payload_json": __import__("json").dumps(metric.to_wire(), sort_keys=True), "revision": metric.revision} for metric in closed)
-            reduction = ReductionBatch((), (), (), tuple(closed), (), outbox, cursors, tuple((event.source, event.summary_id) for event in events))
+            all_metrics = tuple(closed) + tuple(replayed_metrics)
+            outbox = tuple({"bucket_start": metric.bucket_start.isoformat(), "payload_json": __import__("json").dumps(metric.to_wire(), sort_keys=True), "revision": metric.revision} for metric in all_metrics)
+            reduction = ReductionBatch((), (), (), all_metrics, (), outbox, cursors, tuple((event.source, event.summary_id) for event in events))
             self.store.commit_reduction(reduction)
         self._processed_through = current
-        return MetricsRunResult((), (), tuple(replay_outcomes), tuple(closed), 0, self._status(current), quality)
+        return MetricsRunResult((), (), tuple(replay_outcomes), tuple(closed) + tuple(replayed_metrics), 0, self._status(current), quality)
 
     async def run(self, stop: asyncio.Event) -> None:
         while not stop.is_set():

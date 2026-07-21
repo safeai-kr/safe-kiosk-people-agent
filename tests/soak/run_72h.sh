@@ -2,6 +2,8 @@
 set -eu
 duration=${1:-72}
 out=${2:-/var/lib/safe-kiosk-people-agent/soak/72h-report.json}
+test "$(uname -m)" = aarch64 || { echo 'Pi aarch64 required' >&2; exit 78; }
+test "${ALLOW_PI_SOAK:-}" = 1 || { echo 'ALLOW_PI_SOAK=1 required' >&2; exit 78; }
 mkdir -p "$(dirname "$out")"
 python3 - "$out" "$duration" <<'PY'
 import json, pathlib, sys, time

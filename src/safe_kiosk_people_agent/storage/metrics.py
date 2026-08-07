@@ -10,11 +10,17 @@ from .sqlite import open_sqlite, transaction
 def _iso(v:datetime)->str:
     if v.tzinfo is None: raise ValueError("timestamp must be timezone-aware")
     return v.astimezone(timezone.utc).isoformat()
+
+
 class MetricsStore:
-    def __init__(self,path:Path): self.db=open_sqlite(path,"safe_kiosk_people_agent.storage.schema.metrics")
+
+    def __init__(self,path:Path):
+        self.db=open_sqlite(path,"safe_kiosk_people_agent.storage.schema.metrics")
+
     def source_cursor(self,source:Source)->SourceCursor|None:
         r=self.db.execute("select * from source_cursor where source=?",(source.value,)).fetchone()
         return None if r is None else SourceCursor(source,r['collector_run_id'],r['spool_sequence'],datetime.fromisoformat(r['last_event_time']) if r['last_event_time'] else None)
+
     def initialize_runtime_state(self,now:datetime,config:ConfigSnapshot)->StateSnapshot:
         anchor=floor_utc(now,300)-timedelta(seconds=300)
         existing=self.load_runtime_state()
@@ -24,9 +30,11 @@ class MetricsStore:
             self.db.execute("insert into state_snapshot(snapshot_at,processed_through,canonical_state_json,config_generation) values(?,?,?,?)",(_iso(anchor),_iso(anchor),'{}',config.generation))
             self.db.execute("insert into scheduler_state(singleton,processed_through,last_tick_at) values(1,?,?)",(_iso(anchor),_iso(anchor)))
         return StateSnapshot(anchor,anchor,{},'{}',config.generation)
+
     def load_runtime_state(self)->StateSnapshot|None:
         r=self.db.execute("select * from state_snapshot order by snapshot_at desc limit 1").fetchone()
         return None if r is None else StateSnapshot(datetime.fromisoformat(r['snapshot_at']),datetime.fromisoformat(r['processed_through']),{},r['canonical_state_json'],r['config_generation'])
+
     def stage_source_rows(self,rows:Sequence[StoredObservationSummary])->tuple[MetricEvent,...]:
         result=[]
         with transaction(self.db):
@@ -35,6 +43,7 @@ class MetricsStore:
                 self.db.execute("insert or ignore into metric_event(source,summary_id,spool_sequence,event_time,payload_json,collector_run_id) values(?,?,?,?,?,?)",(row.source.value,row.summary_id,row.spool_sequence,_iso(row.last_observed_at),json.dumps(payload),row.collector_run_id))
                 result.append(MetricEvent(row.source,row.summary_id,row.spool_sequence,row.last_observed_at,row))
         return tuple(result)
+
     def load_staged_events(self,*,limit:int)->tuple[MetricEvent,...]:
         rows=self.db.execute("select * from metric_event where consumed=0 order by source,spool_sequence limit ?",(limit,)).fetchall()
         result=[]
@@ -42,6 +51,7 @@ class MetricsStore:
             p=json.loads(r['payload_json']); summary=StoredObservationSummary(p['summary_id'],Source(p['source']),r['collector_run_id'],p['device_token'],datetime.fromisoformat(p['window_start']),datetime.fromisoformat(p['window_end']),datetime.fromisoformat(p['first_observed_at']),datetime.fromisoformat(p['last_observed_at']),p['sample_count'],p['median_rssi_dbm'],p['max_rssi_dbm'],p['frequency_mhz'],p['tx_power_dbm'],r['spool_sequence'])
             result.append(MetricEvent(Source(r['source']),r['summary_id'],r['spool_sequence'],datetime.fromisoformat(r['event_time']),summary))
         return tuple(result)
+
     def commit_event(self,event:MetricEvent,source_cursor:SourceCursor|None,reduction:ReductionBatch)->CommitOutcome:
         with transaction(self.db):
             row=self.db.execute("select consumed from metric_event where source=? and summary_id=?",(event.source.value,event.summary_id)).fetchone()
